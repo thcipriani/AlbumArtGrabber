@@ -1,0 +1,57 @@
+#!/usr/bin/env php
+<?php
+
+error_reporting(0);
+require_once __DIR__ . '/lib/AmazonECS.class.php';
+
+function show_help($extra = '') {
+  $help = <<<HELP
+    Usage: 
+      {$argv[0]} "trackname"
+    Example: 
+      {$argv[0]} "Nirvana - Smells Like Teen Spirit"
+    Requirements:
+      environment access AMAZON_ACCESS_KEY_ID, AMAZON_SECRET_ACCESS_KEY and AMAZON_AFFILIATE_ID
+HELP;
+  fprintf(STDOUT, $help . "\n\n");
+  if ($extra) {
+    fprintf(STDERR, $extra . "\n\n");
+  }
+}
+
+try {
+  if (! isset($argv[1]))
+    throw new Exception("Script Requires First Argument Trackname");
+
+  $ENV = $_ENV;
+
+  if (! $ENV) {
+    $ENV = $_SERVER;
+  }
+
+  if (
+    ! isset($ENV['AMAZON_ACCESS_KEY_ID']) 
+    || ! isset($ENV['AMAZON_SECRET_ACCESS_KEY'])
+    || ! isset($ENV['AMAZON_AFFILIATE_ID'])
+    )
+    throw new Exception("Must export AMAZON_ACCESS_KEY_ID, AMAZON_SECRET_ACCESS_KEY and AMAZON_AFFILIATE_ID");
+} catch (Exception $e) {
+  show_help($e->getMessage());
+}
+
+$client = new AmazonECS(
+  $ENV['AMAZON_ACCESS_KEY_ID'],
+  $ENV['AMAZON_SECRET_ACCESS_KEY'],
+  'com',
+  $ENV['AMAZON_AFFILIATE_ID']
+);
+
+$response = $client->category('DigitalMusic')->responseGroup('Images')->search($argv[1]);
+
+if (getType($response->Items->Item) == 'object') {
+    echo $response->Items->Item->LargeImage->URL;
+} elseif (getType($response->Items->Item) == 'array') {
+    echo $response->Items->Item[0]->LargeImage->URL;
+} else {
+  echo 'Not Found!';
+}
