@@ -4,18 +4,27 @@
 error_reporting(0);
 require_once __DIR__ . '/lib/AmazonECS.class.php';
 
+function term_echo($whatever, $error = false) {
+  if ($error) {
+    fprintf(STDERR, $whatever . "\n\n");
+  } else {
+    fprintf(STDOUT, $whatever . "\n\n");
+  }
+}
+
 function show_help($extra = '') {
   $help = <<<HELP
     Usage: 
       {$argv[0]} "trackname"
     Example: 
-      {$argv[0]} "Nirvana - Smells Like Teen Spirit"
+      {$argv[0]} "Nirvana - Nevermind"
     Requirements:
       environment access AMAZON_ACCESS_KEY_ID, AMAZON_SECRET_ACCESS_KEY and AMAZON_AFFILIATE_ID
 HELP;
-  fprintf(STDOUT, $help . "\n\n");
+  term_echo($help);
+
   if ($extra) {
-    fprintf(STDERR, $extra . "\n\n");
+    term_echo($extra, 1);
   }
 }
 
@@ -49,9 +58,9 @@ $client = new AmazonECS(
 $response = $client->category('DigitalMusic')->responseGroup('Images')->search($argv[1]);
 
 if (getType($response->Items->Item) == 'object') {
-    echo $response->Items->Item->LargeImage->URL;
+    term_echo($response->Items->Item->LargeImage->URL);
 } elseif (getType($response->Items->Item) == 'array') {
-    echo $response->Items->Item[0]->LargeImage->URL;
+    term_echo($response->Items->Item[0]->LargeImage->URL);
 } else {
-  echo 'Not Found!';
+  term_echo('Not Found!');
 }
